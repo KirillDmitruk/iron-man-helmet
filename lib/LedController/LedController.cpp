@@ -6,13 +6,13 @@ LedController::LedController(int p) {
 
 void LedController::begin() {
     pinMode(pin, OUTPUT);
-    off();  // сразу выключаем
+    off();
 }
 
 void LedController::on() {
-    digitalWrite(pin, HIGH); // питание на пин → LED загорается
+    digitalWrite(pin, HIGH); // питание на пин - LED загорается
 }
 
 void LedController::off() {
-    digitalWrite(pin, LOW);  // питание на пин → LED гаснет
+    digitalWrite(pin, LOW);  // питание на пин - LED гаснет
 }

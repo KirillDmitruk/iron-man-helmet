@@ -7,7 +7,7 @@ class LedController {
 private:
     int pin;  // пин, к которому подключены светодиоды
 public:
-    LedController(int pin);   // конструктор
+    LedController(int pin);
     void begin();             // инициализация
     void on();                // включить светодиоды
     void off();               // выключить светодиоды

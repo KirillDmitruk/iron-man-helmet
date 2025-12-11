@@ -42,7 +42,7 @@ void loop() {
             right_led.on();
         }
         isOpen = !isOpen;
-        delay(250); // антидребезг
+        delay(250);
     }
     prevState = currentState;
 
