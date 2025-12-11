@@ -21,5 +21,5 @@ void ServoController::openMask() {
 void ServoController::closeMask() {
     Serial.println("Закрываю маску...");
     leftServo.write(0);
-    // rightServo.write(0);
+    rightServo.write(0);
 }
