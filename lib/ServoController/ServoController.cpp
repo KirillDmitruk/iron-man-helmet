@@ -14,12 +14,12 @@ void ServoController::begin() {
 
 void ServoController::openMask() {
     Serial.println("Открываю маску...");
-    leftServo.write(180);
+    leftServo.write(0);
     rightServo.write(180);
 }
 
 void ServoController::closeMask() {
     Serial.println("Закрываю маску...");
-    leftServo.write(0);
+    leftServo.write(180);
     rightServo.write(0);
 }
