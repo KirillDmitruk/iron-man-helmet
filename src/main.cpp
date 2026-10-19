@@ -1,55 +1,116 @@
 #include <Arduino.h>
-#include "ServoController.h"
-#include "LedController.h"
 
-#define LEFT_SERVO_PIN 9
-#define RIGHT_SERVO_PIN 10
-#define BUTTON_PIN 2
-#define LEFT_LED_PIN 6
-#define RIGHT_LED_PIN 7
+#include "HelmetConfig.h"
+#include "HelmetController.h"
 
-ServoController mask(LEFT_SERVO_PIN, RIGHT_SERVO_PIN);
-LedController left_led(LEFT_LED_PIN);
-LedController right_led(RIGHT_LED_PIN);
+ServoController mask(
+    HelmetConfig::LEFT_SERVO_PIN,
+    HelmetConfig::RIGHT_SERVO_PIN
+);
 
-bool isOpen = false;
-bool prevState = HIGH;
+LedController leftLed(
+    HelmetConfig::LEFT_LED_PIN
+);
+
+LedController rightLed(
+    HelmetConfig::RIGHT_LED_PIN
+);
+
+HelmetController helmet(
+    mask,
+    leftLed,
+    rightLed
+);
+
+bool lastButtonReading = HIGH;
+bool stableButtonState = HIGH;
+
+unsigned long lastDebounceTime = 0;
+
 
 void setup() {
-    Serial.begin(115200);
-    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+    Serial.begin(HelmetConfig::SERIAL_BAUD);
+
+    pinMode(
+        HelmetConfig::BUTTON_PIN,
+        INPUT_PULLUP
+    );
 
     mask.begin();
-    left_led.begin();
-    right_led.begin();
-    left_led.off();
-    right_led.off();
 
-    Serial.println("Готов к управлению маской и светодиодами.");
+    leftLed.begin();
+    rightLed.begin();
+
+    helmet.begin();
+
+    Serial.println("Helmet system initialized");
 }
 
-void loop() {
-    // --- Управление кнопкой ---
-    bool currentState = digitalRead(BUTTON_PIN);
-    if (prevState == HIGH && currentState == LOW) {
-        if (isOpen) {
-            mask.closeMask();
-            left_led.off();
-            right_led.off();
-        } else {
-            mask.openMask();
-            left_led.on();
-            right_led.on();
-        }
-        isOpen = !isOpen;
-        delay(250);
-    }
-    prevState = currentState;
 
-    // --- Управление через Serial ---
-    if (Serial.available() > 0) {
-        char cmd = Serial.read();
-        if (cmd == 'o') { mask.openMask(); isOpen = true; left_led.on(); right_led.on(); }
-        else if (cmd == 'c') { mask.closeMask(); isOpen = false; left_led.off(); right_led.off(); }
+void handleButton() {
+
+    bool reading = digitalRead(
+        HelmetConfig::BUTTON_PIN
+    );
+
+    if (reading != lastButtonReading) {
+        lastDebounceTime = millis();
     }
+
+    if (
+        millis() - lastDebounceTime >
+        HelmetConfig::DEBOUNCE_MS
+    ) {
+        if (reading != stableButtonState) {
+
+            stableButtonState = reading;
+
+            if (stableButtonState == LOW) {
+                helmet.execute(
+                    HelmetCommand::TOGGLE
+                );
+            }
+        }
+    }
+
+    lastButtonReading = reading;
+}
+
+
+void handleSerial() {
+
+    while (Serial.available() > 0) {
+
+        char command = Serial.read();
+
+        switch (command) {
+
+            case 'o':
+                helmet.execute(
+                    HelmetCommand::OPEN
+                );
+                break;
+
+            case 'c':
+                helmet.execute(
+                    HelmetCommand::CLOSE
+                );
+                break;
+
+            case 't':
+                helmet.execute(
+                    HelmetCommand::TOGGLE
+                );
+                break;
+        }
+    }
+}
+
+
+void loop() {
+
+    handleButton();
+
+    handleSerial();
 }
