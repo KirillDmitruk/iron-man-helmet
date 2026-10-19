@@ -1,25 +1,39 @@
 #include "ServoController.h"
+#include "HelmetConfig.h"
 
-ServoController::ServoController(int leftPin, int rightPin)
-    : leftPin(leftPin), rightPin(rightPin) {}
+ServoController::ServoController(
+    int leftPin,
+    int rightPin
+)
+    : leftPin(leftPin),
+      rightPin(rightPin) {}
+
 
 void ServoController::begin() {
     leftServo.attach(leftPin);
     rightServo.attach(rightPin);
 
-    // начальные позиции маски (закрыта)
-    leftServo.write(0);
-    rightServo.write(0);
+    // No automatic position command on startup.
 }
+
 
 void ServoController::openMask() {
-    Serial.println("Открываю маску...");
-    leftServo.write(0);
-    rightServo.write(180);
+    leftServo.write(
+        HelmetConfig::LEFT_OPEN_ANGLE
+    );
+
+    rightServo.write(
+        HelmetConfig::RIGHT_OPEN_ANGLE
+    );
 }
 
+
 void ServoController::closeMask() {
-    Serial.println("Закрываю маску...");
-    leftServo.write(180);
-    rightServo.write(0);
+    leftServo.write(
+        HelmetConfig::LEFT_CLOSED_ANGLE
+    );
+
+    rightServo.write(
+        HelmetConfig::RIGHT_CLOSED_ANGLE
+    );
 }
