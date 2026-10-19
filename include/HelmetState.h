@@ -2,12 +2,18 @@
 
 enum class HelmetState {
     UNKNOWN,
+    CLOSED,
+    OPENING,
     OPEN,
-    CLOSED
+    CLOSING,
+    STOPPED,
+    FAULT
 };
 
 enum class HelmetCommand {
+    INITIALIZE_CLOSED,
     OPEN,
     CLOSE,
-    TOGGLE
+    TOGGLE,
+    STOP
 };

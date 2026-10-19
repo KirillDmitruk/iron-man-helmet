@@ -3,12 +3,12 @@
 #include <Arduino.h>
 
 #include "HelmetState.h"
-#include "ServoController.h"
+#include "MotionController.h"
 #include "LedController.h"
 
 class HelmetController {
 private:
-    ServoController& servo;
+    MotionController& motion;
     LedController& leftLed;
     LedController& rightLed;
 
@@ -16,14 +16,15 @@ private:
 
 public:
     HelmetController(
-        ServoController& servo,
+        MotionController& motion,
         LedController& leftLed,
         LedController& rightLed
     );
 
     void begin();
+    void update();
 
-    void execute(HelmetCommand command);
+    bool execute(HelmetCommand command);
 
     HelmetState getState() const;
 };

@@ -1,5 +1,4 @@
-#ifndef SERVO_CONTROLLER_H
-#define SERVO_CONTROLLER_H
+#pragma once
 
 #include <Arduino.h>
 #include <Servo.h>
@@ -16,7 +15,9 @@ public:
     ServoController(int leftPin, int rightPin);
 
     void begin();
+
+    void setAngles(int leftAngle, int rightAngle);
+
     void openMask();
     void closeMask();
 };
-#endif
