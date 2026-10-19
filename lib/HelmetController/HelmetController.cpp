@@ -1,11 +1,12 @@
 #include "HelmetController.h"
+#include "HelmetConfig.h"
 
 HelmetController::HelmetController(
-    ServoController& servo,
+    MotionController& motion,
     LedController& leftLed,
     LedController& rightLed
 )
-    : servo(servo),
+    : motion(motion),
       leftLed(leftLed),
       rightLed(rightLed) {}
 
@@ -18,45 +19,119 @@ void HelmetController::begin() {
 }
 
 
-void HelmetController::execute(HelmetCommand command) {
+void HelmetController::update() {
+    motion.update();
+
+    if (motion.isMoving()) {
+        return;
+    }
+
+    if (state == HelmetState::OPENING) {
+        state = HelmetState::OPEN;
+
+        leftLed.on();
+        rightLed.on();
+    }
+    else if (state == HelmetState::CLOSING) {
+        state = HelmetState::CLOSED;
+
+        leftLed.off();
+        rightLed.off();
+    }
+}
+
+
+bool HelmetController::execute(HelmetCommand command) {
+
+    if (command == HelmetCommand::STOP) {
+        motion.stop();
+        state = HelmetState::STOPPED;
+        return true;
+    }
+
+    if (command == HelmetCommand::INITIALIZE_CLOSED) {
+        if (motion.isMoving()) {
+            return false;
+        }
+
+        motion.initializePosition(
+            HelmetConfig::LEFT_CLOSED_ANGLE,
+            HelmetConfig::RIGHT_CLOSED_ANGLE
+        );
+
+        state = HelmetState::CLOSED;
+
+        leftLed.off();
+        rightLed.off();
+
+        return true;
+    }
+
+    if (!motion.isInitialized()) {
+        return false;
+    }
+
+    if (motion.isMoving()) {
+        return false;
+    }
+
+    if (command == HelmetCommand::TOGGLE) {
+        if (state == HelmetState::OPEN) {
+            command = HelmetCommand::CLOSE;
+        }
+        else if (state == HelmetState::CLOSED) {
+            command = HelmetCommand::OPEN;
+        }
+        else {
+            return false;
+        }
+    }
 
     switch (command) {
 
         case HelmetCommand::OPEN:
             if (state == HelmetState::OPEN) {
-                return;
+                return true;
             }
 
-            servo.openMask();
+            if (state != HelmetState::CLOSED) {
+                return false;
+            }
 
-            leftLed.on();
-            rightLed.on();
+            if (!motion.moveTo(
+                HelmetConfig::LEFT_OPEN_ANGLE,
+                HelmetConfig::RIGHT_OPEN_ANGLE,
+                HelmetConfig::MOTION_DURATION_MS
+            )) {
+                return false;
+            }
 
-            state = HelmetState::OPEN;
-            break;
+            state = HelmetState::OPENING;
+            return true;
+
 
         case HelmetCommand::CLOSE:
             if (state == HelmetState::CLOSED) {
-                return;
+                return true;
             }
 
-            servo.closeMask();
-
-            leftLed.off();
-            rightLed.off();
-
-            state = HelmetState::CLOSED;
-            break;
-
-        case HelmetCommand::TOGGLE:
-            // UNKNOWN intentionally requires explicit OPEN/CLOSE.
-            if (state == HelmetState::OPEN) {
-                execute(HelmetCommand::CLOSE);
+            if (state != HelmetState::OPEN) {
+                return false;
             }
-            else if (state == HelmetState::CLOSED) {
-                execute(HelmetCommand::OPEN);
+
+            if (!motion.moveTo(
+                HelmetConfig::LEFT_CLOSED_ANGLE,
+                HelmetConfig::RIGHT_CLOSED_ANGLE,
+                HelmetConfig::MOTION_DURATION_MS
+            )) {
+                return false;
             }
-            break;
+
+            state = HelmetState::CLOSING;
+            return true;
+
+        default:
+            return false;
     }
 }
 

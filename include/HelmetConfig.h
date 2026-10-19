@@ -27,4 +27,8 @@ namespace HelmetConfig {
 
     // Serial
     constexpr unsigned long SERIAL_BAUD = 115200;
+    
+    // Motion settings
+    constexpr unsigned long MOTION_DURATION_MS = 1200;
+    constexpr unsigned long MOTION_UPDATE_MS = 20;
 }

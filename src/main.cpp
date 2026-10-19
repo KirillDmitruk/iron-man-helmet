@@ -2,6 +2,7 @@
 
 #include "HelmetConfig.h"
 #include "HelmetController.h"
+#include "MotionController.h"
 
 ServoController mask(
     HelmetConfig::LEFT_SERVO_PIN,
@@ -16,8 +17,10 @@ LedController rightLed(
     HelmetConfig::RIGHT_LED_PIN
 );
 
+MotionController motion(mask);
+
 HelmetController helmet(
-    mask,
+    motion,
     leftLed,
     rightLed
 );
@@ -29,7 +32,6 @@ unsigned long lastDebounceTime = 0;
 
 
 void setup() {
-
     Serial.begin(HelmetConfig::SERIAL_BAUD);
 
     pinMode(
@@ -44,12 +46,13 @@ void setup() {
 
     helmet.begin();
 
-    Serial.println("Helmet system initialized");
+    Serial.println("Helmet initialized");
+    Serial.println("Position UNKNOWN");
+    Serial.println("Calibrate before sending i");
 }
 
 
 void handleButton() {
-
     bool reading = digitalRead(
         HelmetConfig::BUTTON_PIN
     );
@@ -63,13 +66,10 @@ void handleButton() {
         HelmetConfig::DEBOUNCE_MS
     ) {
         if (reading != stableButtonState) {
-
             stableButtonState = reading;
 
             if (stableButtonState == LOW) {
-                helmet.execute(
-                    HelmetCommand::TOGGLE
-                );
+                helmet.execute(HelmetCommand::TOGGLE);
             }
         }
     }
@@ -79,38 +79,48 @@ void handleButton() {
 
 
 void handleSerial() {
-
     while (Serial.available() > 0) {
+        char input = Serial.read();
 
-        char command = Serial.read();
+        HelmetCommand command;
 
-        switch (command) {
+        switch (input) {
+            case 'i':
+                command = HelmetCommand::INITIALIZE_CLOSED;
+                break;
 
             case 'o':
-                helmet.execute(
-                    HelmetCommand::OPEN
-                );
+                command = HelmetCommand::OPEN;
                 break;
 
             case 'c':
-                helmet.execute(
-                    HelmetCommand::CLOSE
-                );
+                command = HelmetCommand::CLOSE;
                 break;
 
             case 't':
-                helmet.execute(
-                    HelmetCommand::TOGGLE
-                );
+                command = HelmetCommand::TOGGLE;
                 break;
+
+            case 's':
+                command = HelmetCommand::STOP;
+                break;
+
+            default:
+                continue;
         }
+
+        bool accepted = helmet.execute(command);
+
+        Serial.println(
+            accepted ? "COMMAND ACCEPTED" : "COMMAND REJECTED"
+        );
     }
 }
 
 
 void loop() {
-
     handleButton();
-
     handleSerial();
+
+    helmet.update();
 }
